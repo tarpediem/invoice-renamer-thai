@@ -33,7 +33,7 @@ export interface VisionProvider {
 export abstract class BaseVisionProvider implements VisionProvider {
   protected config?: ProviderConfig;
 
-  constructor(public readonly name: string) { }
+  constructor(public readonly name: string) {}
 
   async initialize(config: ProviderConfig): Promise<void> {
     this.config = config;

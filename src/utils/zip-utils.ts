@@ -9,16 +9,12 @@ import { isPdfFile } from './file-utils';
  * @param outputDir Directory to extract files to (optional, uses temp dir if not specified)
  * @returns Array of extracted PDF file paths
  */
-export async function extractPdfsFromZip(
-  zipPath: string,
-  outputDir?: string
-): Promise<string[]> {
+export async function extractPdfsFromZip(zipPath: string, outputDir?: string): Promise<string[]> {
   const zip = new AdmZip(zipPath);
   const zipEntries = zip.getEntries();
 
   // Use temp directory if no output specified
-  const extractDir =
-    outputDir || path.join(process.cwd(), '.temp', `extract-${Date.now()}`);
+  const extractDir = outputDir || path.join(process.cwd(), '.temp', `extract-${Date.now()}`);
 
   // Ensure extract directory exists
   await fs.mkdir(extractDir, { recursive: true });

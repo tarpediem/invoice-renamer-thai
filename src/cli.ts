@@ -81,9 +81,7 @@ program
         }
       } else if (stats.isDirectory()) {
         const files = await fs.readdir(file);
-        filesToProcess = files
-          .filter((f) => isPdfFile(f))
-          .map((f) => path.resolve(file, f));
+        filesToProcess = files.filter((f) => isPdfFile(f)).map((f) => path.resolve(file, f));
 
         if (filesToProcess.length === 0) {
           console.error('Error: No PDF files found in directory');

@@ -2,25 +2,18 @@ import * as path from 'path';
 import * as fs from 'fs/promises';
 import { VisionProvider } from '../providers';
 import { ProcessingResult, ProcessingOptions } from '../types';
-import {
-  generateUniqueFileName,
-  ensureDir,
-  getFileExtension,
-} from '../utils/file-utils';
+import { generateUniqueFileName, ensureDir, getFileExtension } from '../utils/file-utils';
 
 /**
  * Main invoice processing engine
  */
 export class InvoiceProcessor {
-  constructor(private provider: VisionProvider) { }
+  constructor(private provider: VisionProvider) {}
 
   /**
    * Process a single PDF invoice file with retry logic
    */
-  async processInvoice(
-    filePath: string,
-    options: ProcessingOptions
-  ): Promise<ProcessingResult> {
+  async processInvoice(filePath: string, options: ProcessingOptions): Promise<ProcessingResult> {
     const maxRetries = options.maxRetries || 2;
     let lastError: Error | null = null;
 
@@ -30,9 +23,11 @@ export class InvoiceProcessor {
           // Wait before retry (exponential backoff: 1s, 2s, 4s)
           const waitTime = Math.pow(2, attempt - 1) * 1000;
           if (options.verbose) {
-            console.log(`  Retry attempt ${attempt}/${maxRetries} for ${path.basename(filePath)} (waiting ${waitTime}ms)...`);
+            console.log(
+              `  Retry attempt ${attempt}/${maxRetries} for ${path.basename(filePath)} (waiting ${waitTime}ms)...`
+            );
           }
-          await new Promise(resolve => setTimeout(resolve, waitTime));
+          await new Promise((resolve) => setTimeout(resolve, waitTime));
         }
 
         // Extract invoice data using the vision provider
@@ -73,13 +68,9 @@ export class InvoiceProcessor {
 
         // Don't retry on certain errors
         const errorMessage = lastError.message;
-        const nonRetryableErrors = [
-          'File not found',
-          'Permission denied',
-          'Not a PDF',
-        ];
+        const nonRetryableErrors = ['File not found', 'Permission denied', 'Not a PDF'];
 
-        if (nonRetryableErrors.some(msg => errorMessage.includes(msg))) {
+        if (nonRetryableErrors.some((msg) => errorMessage.includes(msg))) {
           if (options.verbose) {
             console.log(`  Non-retryable error, skipping retries`);
           }

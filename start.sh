@@ -44,7 +44,14 @@ if [ ! -d "dist" ]; then
     echo ""
 fi
 
-# Vérifier la clé API OpenRouter
+# Charger le fichier .env s'il existe (AVANT de vérifier la clé API)
+if [ -f ".env" ]; then
+    echo "✓ Chargement des variables d'environnement depuis .env"
+    export $(grep -v '^#' .env | xargs)
+    echo ""
+fi
+
+# Vérifier la clé API OpenRouter (APRÈS avoir chargé .env)
 if [ -z "$OPENROUTER_API_KEY" ]; then
     echo "⚠️  ATTENTION: La variable OPENROUTER_API_KEY n'est pas définie"
     echo ""
@@ -58,13 +65,6 @@ if [ -z "$OPENROUTER_API_KEY" ]; then
     echo "   Alternative: Utilisez LM Studio en local (pas besoin de clé)"
     echo ""
     read -p "   Appuyez sur Entrée pour continuer quand même..."
-    echo ""
-fi
-
-# Charger le fichier .env s'il existe
-if [ -f ".env" ]; then
-    echo "✓ Chargement des variables d'environnement depuis .env"
-    export $(grep -v '^#' .env | xargs)
     echo ""
 fi
 

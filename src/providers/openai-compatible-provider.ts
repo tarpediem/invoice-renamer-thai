@@ -68,12 +68,12 @@ export abstract class OpenAICompatibleProvider extends BaseVisionProvider {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(
-          `${this.getProviderName()} API error: ${response.status} - ${errorText}`
-        );
+        throw new Error(`${this.getProviderName()} API error: ${response.status} - ${errorText}`);
       }
 
-      const result = (await response.json()) as any;
+      const result = (await response.json()) as {
+        choices: Array<{ message: { content: string } }>;
+      };
       const content = result.choices[0]?.message?.content;
 
       if (!content) {
@@ -85,9 +85,7 @@ export abstract class OpenAICompatibleProvider extends BaseVisionProvider {
       return invoiceData;
     } catch (error) {
       throw new Error(
-        `Failed to extract invoice data: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+        `Failed to extract invoice data: ${error instanceof Error ? error.message : String(error)}`
       );
     }
   }
@@ -113,9 +111,7 @@ export abstract class OpenAICompatibleProvider extends BaseVisionProvider {
       // Validate date format (YYYY-MM-DD)
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
       if (!dateRegex.test(parsed.date)) {
-        throw new Error(
-          `Invalid date format: ${parsed.date}. Expected YYYY-MM-DD`
-        );
+        throw new Error(`Invalid date format: ${parsed.date}. Expected YYYY-MM-DD`);
       }
 
       // Check if LLM forgot to convert Buddhist Era
@@ -161,9 +157,7 @@ export abstract class OpenAICompatibleProvider extends BaseVisionProvider {
       };
     } catch (error) {
       throw new Error(
-        `Failed to parse invoice data: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+        `Failed to parse invoice data: ${error instanceof Error ? error.message : String(error)}`
       );
     }
   }

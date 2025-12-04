@@ -8,7 +8,7 @@ import { providerRegistry } from '../providers';
 import { InvoiceProcessor } from '../core/invoice-processor';
 import { registerProviders } from '../bootstrap';
 import { extractPdfsFromZip } from '../utils/zip-utils';
-
+import type { VisionProvider } from '../providers/base-provider';
 import { splitPdfIntoPages, isMultiPagePdf } from '../utils/pdf-split';
 
 const app = express();
@@ -44,7 +44,7 @@ interface AppSettings {
   lmstudioModel: string;
 }
 
-let appSettings: AppSettings = {
+const appSettings: AppSettings = {
   preferredProvider: 'auto', // Try OpenRouter first, fallback to LM Studio
   openrouterModel: 'qwen/qwen3-vl-235b-a22b-instruct', // Best for OCR
   lmstudioModel: 'local-model',
@@ -54,27 +54,27 @@ let appSettings: AppSettings = {
 registerProviders();
 
 // Helper function to select provider based on settings
-async function selectProvider(): Promise<{ name: string; provider: any } | null> {
+async function selectProvider(): Promise<{ name: string; provider: VisionProvider } | null> {
   if (appSettings.preferredProvider === 'openrouter') {
     const provider = providerRegistry.get('openrouter');
-    if (provider && await provider.isAvailable()) {
+    if (provider && (await provider.isAvailable())) {
       return { name: 'openrouter', provider };
     }
     return null;
   } else if (appSettings.preferredProvider === 'lmstudio') {
     const provider = providerRegistry.get('lmstudio');
-    if (provider && await provider.isAvailable()) {
+    if (provider && (await provider.isAvailable())) {
       return { name: 'lmstudio', provider };
     }
     return null;
   } else {
     // Auto mode: Try OpenRouter first, fallback to LM Studio
     let provider = providerRegistry.get('openrouter');
-    if (provider && await provider.isAvailable()) {
+    if (provider && (await provider.isAvailable())) {
       return { name: 'openrouter', provider };
     }
     provider = providerRegistry.get('lmstudio');
-    if (provider && await provider.isAvailable()) {
+    if (provider && (await provider.isAvailable())) {
       return { name: 'lmstudio', provider };
     }
     return null;
@@ -91,10 +91,10 @@ const storage = multer.diskStorage({
   destination: '.temp/uploads/',
   filename: (_req, file, cb) => {
     // Generate unique filename while preserving the extension
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     const ext = path.extname(file.originalname);
     cb(null, file.fieldname + '-' + uniqueSuffix + ext);
-  }
+  },
 });
 
 const upload = multer({
@@ -102,18 +102,53 @@ const upload = multer({
   limits: { fileSize: 100 * 1024 * 1024 }, // 100MB limit
 });
 
+// Shared provider data configuration
+const getProviderData = () => {
+  return {
+    openrouter: {
+      models: [
+        { id: 'qwen/qwen3-vl-235b-a22b-instruct', name: 'Qwen3-VL-235B (Best OCR)', recommended: true },
+        { id: 'qwen/qwen3-vl-30b-a3b-instruct', name: 'Qwen3-VL-30B (Fast & Accurate)' },
+        { id: 'qwen/qwen-2.5-vl-72b-instruct', name: 'Qwen2.5-VL-72B (Proven for Thai)' },
+        { id: 'qwen/qwen-2.5-vl-32b-instruct', name: 'Qwen2.5-VL-32B (Good Balance)' },
+        { id: 'google/gemini-2.5-flash-preview-09-2025', name: 'Gemini 2.5 Flash (Fast & Smart)' },
+        { id: 'google/gemini-3-pro-preview', name: 'Gemini 3 Pro (Latest)' },
+        { id: 'anthropic/claude-sonnet-4.5', name: 'Claude Sonnet 4.5 (High Quality)' },
+        { id: 'anthropic/claude-haiku-4.5', name: 'Claude Haiku 4.5 (Fast)' },
+        { id: 'openai/gpt-5.1', name: 'GPT-5.1 (Latest OpenAI)' },
+        { id: 'openai/gpt-4o', name: 'GPT-4o (Proven Quality)' },
+      ],
+    },
+    lmstudio: {
+      models: [{ id: 'local-model', name: 'Local Model' }],
+    },
+  };
+};
+
+// Helper to get model display name
+const getModelDisplayName = (providerId: string, modelId: string): string => {
+  const data = getProviderData();
+  const providerData = data[providerId as keyof ReturnType<typeof getProviderData>];
+  if (!providerData) return modelId;
+
+  const model = providerData.models.find((m) => m.id === modelId);
+  return model?.name.replace(/ \(.*?\)/, '') || modelId; // Remove descriptive text in parentheses
+};
+
 // Health check - shows which provider is available
 app.get('/api/health', async (_req, res) => {
   // Try OpenRouter first
   let provider = providerRegistry.get('openrouter');
-  if (provider && await provider.isAvailable()) {
-    return res.json({ status: 'ok', provider: 'openrouter', model: 'Qwen2.5-VL-72B' });
+  if (provider && (await provider.isAvailable())) {
+    const modelName = getModelDisplayName('openrouter', appSettings.openrouterModel);
+    return res.json({ status: 'ok', provider: 'openrouter', model: modelName });
   }
 
   // Fallback to LM Studio
   provider = providerRegistry.get('lmstudio');
-  if (provider && await provider.isAvailable()) {
-    return res.json({ status: 'ok', provider: 'lmstudio', model: 'Local Model' });
+  if (provider && (await provider.isAvailable())) {
+    const modelName = getModelDisplayName('lmstudio', appSettings.lmstudioModel);
+    return res.json({ status: 'ok', provider: 'lmstudio', model: modelName });
   }
 
   // No providers available
@@ -132,15 +167,23 @@ app.get('/api/providers', async (_req, res) => {
       providers.push({
         name: 'openrouter',
         displayName: 'OpenRouter',
+        description: 'Cloud-based, multiple models',
         available,
         models: [
           // Best for Thai OCR - Qwen VL series excels at OCR tasks
-          { id: 'qwen/qwen3-vl-235b-a22b-instruct', name: 'Qwen3-VL-235B (Best OCR)', recommended: true },
+          {
+            id: 'qwen/qwen3-vl-235b-a22b-instruct',
+            name: 'Qwen3-VL-235B (Best OCR)',
+            recommended: true,
+          },
           { id: 'qwen/qwen3-vl-30b-a3b-instruct', name: 'Qwen3-VL-30B (Fast & Accurate)' },
           { id: 'qwen/qwen-2.5-vl-72b-instruct', name: 'Qwen2.5-VL-72B (Proven for Thai)' },
           { id: 'qwen/qwen-2.5-vl-32b-instruct', name: 'Qwen2.5-VL-32B (Good Balance)' },
           // Premium models
-          { id: 'google/gemini-2.5-flash-preview-09-2025', name: 'Gemini 2.5 Flash (Fast & Smart)' },
+          {
+            id: 'google/gemini-2.5-flash-preview-09-2025',
+            name: 'Gemini 2.5 Flash (Fast & Smart)',
+          },
           { id: 'google/gemini-3-pro-preview', name: 'Gemini 3 Pro (Latest)' },
           { id: 'anthropic/claude-sonnet-4.5', name: 'Claude Sonnet 4.5 (High Quality)' },
           { id: 'anthropic/claude-haiku-4.5', name: 'Claude Haiku 4.5 (Fast)' },
@@ -157,14 +200,18 @@ app.get('/api/providers', async (_req, res) => {
       providers.push({
         name: 'lmstudio',
         displayName: 'LM Studio (Local)',
+        description: 'Local inference',
         available,
-        models: [
-          { id: 'local-model', name: 'Local Model' },
-        ],
+        models: [{ id: 'local-model', name: 'Local Model' }],
       });
     }
 
-    res.json({ providers });
+    res.json({
+      providers,
+      providerOptions: [
+        { value: 'auto', name: 'Auto', description: 'Try OpenRouter first, fallback to LM Studio' },
+      ],
+    });
   } catch (error) {
     res.status(500).json({ error: 'Failed to get providers' });
   }
@@ -311,10 +358,18 @@ app.post('/api/retry/:sessionId', async (req, res) => {
 
     // Process failed files in background
     const filesToRetry = session!.failedFiles.map((f) => f.path);
-    processFilesInBackground(retrySessionId, filesToRetry, retryOutputDir, '', selected!.name, selected!.provider);
-  } catch (error: any) {
+    processFilesInBackground(
+      retrySessionId,
+      filesToRetry,
+      retryOutputDir,
+      '',
+      selected!.name,
+      selected!.provider
+    );
+  } catch (err: unknown) {
     retrySession.status = 'error';
-    retrySession.error = error instanceof Error ? error.message : String(error);
+    const error = err as Error;
+    retrySession.error = error.message || String(err);
   }
 });
 
@@ -348,7 +403,9 @@ app.post('/api/process', upload.single('file'), async (req, res) => {
     if (!selected) {
       session.status = 'error';
       session.error = 'No provider available. Please check settings or start required provider.';
-      return res.status(503).json({ error: 'No provider available. Please check settings or start required provider.' });
+      return res.status(503).json({
+        error: 'No provider available. Please check settings or start required provider.',
+      });
     }
 
     const providerName = selected.name;
@@ -397,7 +454,14 @@ app.post('/api/process', upload.single('file'), async (req, res) => {
     res.json({ sessionId, total: session.total });
 
     // Process files in background
-    processFilesInBackground(sessionId, filesToProcess, outputDir, uploadedFile, providerName, provider);
+    processFilesInBackground(
+      sessionId,
+      filesToProcess,
+      outputDir,
+      uploadedFile,
+      providerName,
+      provider
+    );
     return;
   } catch (error) {
     session.status = 'error';
@@ -417,8 +481,8 @@ async function processFilesInBackground(
   outputDir: string,
   uploadedFile: string,
   providerName: string,
-  provider: any
-) {
+  provider: VisionProvider
+): Promise<void> {
   const session = sessions.get(sessionId);
   if (!session) return;
 
@@ -454,11 +518,15 @@ async function processFilesInBackground(
           const filename = path.basename(result.newPath);
           session.files.push(filename);
           zip.addLocalFile(result.newPath);
-          console.log(`✓ [${session.processed}/${session.total}] ${path.basename(filePath)} → ${filename} (${processingTime}ms)`);
+          console.log(
+            `✓ [${session.processed}/${session.total}] ${path.basename(filePath)} → ${filename} (${processingTime}ms)`
+          );
         } else {
           session.failed++;
           const errorDetail = result.error || 'Processing failed';
-          console.error(`✗ [${session.processed}/${session.total}] ${path.basename(filePath)}: ${errorDetail}`);
+          console.error(
+            `✗ [${session.processed}/${session.total}] ${path.basename(filePath)}: ${errorDetail}`
+          );
           session.failedFiles.push({
             originalName: path.basename(filePath),
             path: filePath,
@@ -474,8 +542,10 @@ async function processFilesInBackground(
         // Categorize error type for better debugging
         let errorCategory = 'Unknown';
         if (errorMessage.includes('PDF')) errorCategory = 'PDF Processing';
-        else if (errorMessage.includes('API') || errorMessage.includes('fetch')) errorCategory = 'API Error';
-        else if (errorMessage.includes('date') || errorMessage.includes('year')) errorCategory = 'Date Parsing';
+        else if (errorMessage.includes('API') || errorMessage.includes('fetch'))
+          errorCategory = 'API Error';
+        else if (errorMessage.includes('date') || errorMessage.includes('year'))
+          errorCategory = 'Date Parsing';
         else if (errorMessage.includes('supplier')) errorCategory = 'Supplier Extraction';
         else if (errorMessage.includes('JSON')) errorCategory = 'JSON Parsing';
 
@@ -536,9 +606,9 @@ app.listen(PORT, '0.0.0.0', async () => {
   const openrouter = providerRegistry.get('openrouter');
   const lmstudio = providerRegistry.get('lmstudio');
 
-  if (openrouter && await openrouter.isAvailable()) {
+  if (openrouter && (await openrouter.isAvailable())) {
     providerInfo = 'OpenRouter (Qwen2.5-VL-72B) ✓';
-  } else if (lmstudio && await lmstudio.isAvailable()) {
+  } else if (lmstudio && (await lmstudio.isAvailable())) {
     providerInfo = 'LM Studio (Local) ✓';
   } else {
     providerInfo = 'None available ✗';

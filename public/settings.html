@@ -266,24 +266,7 @@
       <div class="form-group">
         <label>Preferred Provider</label>
         <div class="radio-group" id="provider-selection">
-          <div class="radio-option" data-value="auto">
-            <input type="radio" name="provider" value="auto" id="provider-auto">
-            <label for="provider-auto" class="radio-label">
-              <strong>Auto</strong> - Try OpenRouter first, fallback to LM Studio
-            </label>
-          </div>
-          <div class="radio-option" data-value="openrouter">
-            <input type="radio" name="provider" value="openrouter" id="provider-openrouter">
-            <label for="provider-openrouter" class="radio-label">
-              <strong>OpenRouter</strong> - Cloud-based, multiple models
-            </label>
-          </div>
-          <div class="radio-option" data-value="lmstudio">
-            <input type="radio" name="provider" value="lmstudio" id="provider-lmstudio">
-            <label for="provider-lmstudio" class="radio-label">
-              <strong>LM Studio</strong> - Local inference
-            </label>
-          </div>
+          <!-- Providers will be loaded dynamically from API -->
         </div>
       </div>
     </div>
@@ -294,14 +277,10 @@
       <div class="form-group">
         <label for="openrouter-model">Select Model</label>
         <select id="openrouter-model">
-          <option value="qwen/qwen-2.5-vl-72b-instruct">Qwen2.5-VL-72B (Recommended for Thai) 🌟</option>
-          <option value="qwen/qwen-2.5-vl-32b-instruct">Qwen2.5-VL-32B (Faster, Good)</option>
-          <option value="qwen/qwen-2.5-vl-7b-instruct">Qwen2.5-VL-7B (Fastest, Basic)</option>
-          <option value="google/gemini-2.5-pro">Gemini 2.5 Pro (High Accuracy)</option>
-          <option value="openai/gpt-4o">GPT-4o (Proven Quality)</option>
+          <option value="">Loading models...</option>
         </select>
         <div class="help-text">
-          Qwen2.5-VL-72B is optimized for Thai language and provides the best accuracy for Thai invoices.
+          Qwen3-VL models are optimized for OCR and Thai language processing.
         </div>
       </div>
     </div>
@@ -329,6 +308,110 @@
 
   <script>
     let currentSettings = {};
+    let providers = [];
+
+    // Load providers and their models from API
+    async function loadProviders() {
+      try {
+        const response = await fetch('/api/providers');
+        const data = await response.json();
+        providers = data.providers;
+
+        // Populate provider selection radio buttons
+        const providerSelection = document.getElementById('provider-selection');
+        providerSelection.innerHTML = '';
+
+        // Add provider options from API
+        if (data.providerOptions) {
+          data.providerOptions.forEach(option => {
+            const optionElement = createProviderOption(option.value, option.name, option.description);
+            providerSelection.appendChild(optionElement);
+          });
+        }
+
+        // Add available providers with their descriptions from API
+        providers.forEach(provider => {
+          const statusIcon = provider.available ? ' ✓' : ' ✗';
+          const option = createProviderOption(
+            provider.name,
+            provider.displayName + statusIcon,
+            provider.description || ''
+          );
+          providerSelection.appendChild(option);
+        });
+
+        // Re-attach click handlers to new radio options
+        attachProviderClickHandlers();
+
+        // Populate OpenRouter models
+        const openrouterProvider = providers.find(p => p.name === 'openrouter');
+        if (openrouterProvider && openrouterProvider.models) {
+          const openrouterSelect = document.getElementById('openrouter-model');
+          openrouterSelect.innerHTML = '';
+
+          openrouterProvider.models.forEach(model => {
+            const option = document.createElement('option');
+            option.value = model.id;
+            option.textContent = model.name + (model.recommended ? ' 🌟' : '');
+            openrouterSelect.appendChild(option);
+          });
+        }
+
+        // Populate LM Studio models
+        const lmstudioProvider = providers.find(p => p.name === 'lmstudio');
+        if (lmstudioProvider && lmstudioProvider.models) {
+          const lmstudioSelect = document.getElementById('lmstudio-model');
+          lmstudioSelect.innerHTML = '';
+
+          lmstudioProvider.models.forEach(model => {
+            const option = document.createElement('option');
+            option.value = model.id;
+            option.textContent = model.name;
+            lmstudioSelect.appendChild(option);
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load providers:', error);
+      }
+    }
+
+    // Helper function to create provider radio option
+    function createProviderOption(value, name, description) {
+      const div = document.createElement('div');
+      div.className = 'radio-option';
+      div.setAttribute('data-value', value);
+
+      const input = document.createElement('input');
+      input.type = 'radio';
+      input.name = 'provider';
+      input.value = value;
+      input.id = `provider-${value}`;
+
+      const label = document.createElement('label');
+      label.setAttribute('for', `provider-${value}`);
+      label.className = 'radio-label';
+      label.innerHTML = `<strong>${name}</strong> - ${description}`;
+
+      div.appendChild(input);
+      div.appendChild(label);
+
+      return div;
+    }
+
+    // Attach click handlers to provider radio options
+    function attachProviderClickHandlers() {
+      document.querySelectorAll('.radio-option').forEach(option => {
+        option.addEventListener('click', function() {
+          const value = this.getAttribute('data-value');
+          const radio = this.querySelector('input[type="radio"]');
+
+          // Update radio buttons
+          document.querySelectorAll('.radio-option').forEach(opt => opt.classList.remove('selected'));
+          this.classList.add('selected');
+          radio.checked = true;
+        });
+      });
+    }
 
     // Load current settings
     async function loadSettings() {
@@ -347,19 +430,6 @@
         console.error('Failed to load settings:', error);
       }
     }
-
-    // Radio button selection
-    document.querySelectorAll('.radio-option').forEach(option => {
-      option.addEventListener('click', function() {
-        const value = this.getAttribute('data-value');
-        const radio = this.querySelector('input[type="radio"]');
-
-        // Update radio buttons
-        document.querySelectorAll('.radio-option').forEach(opt => opt.classList.remove('selected'));
-        this.classList.add('selected');
-        radio.checked = true;
-      });
-    });
 
     // Save settings
     document.getElementById('save-btn').addEventListener('click', async () => {
@@ -401,8 +471,13 @@
       }
     });
 
-    // Load settings on page load
-    loadSettings();
+    // Load providers and settings on page load
+    async function init() {
+      await loadProviders();
+      await loadSettings();
+    }
+
+    init();
   </script>
 </body>
 </html>

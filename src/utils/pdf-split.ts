@@ -8,10 +8,7 @@ import * as path from 'path';
  * @param outputDir Directory to save split PDFs
  * @returns Array of paths to the split PDF files
  */
-export async function splitPdfIntoPages(
-  pdfPath: string,
-  outputDir: string
-): Promise<string[]> {
+export async function splitPdfIntoPages(pdfPath: string, outputDir: string): Promise<string[]> {
   try {
     // Read the PDF file
     const pdfBytes = await fs.readFile(pdfPath);

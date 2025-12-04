@@ -71,9 +71,7 @@ export function normalizeDateFromBE(dateStr: string): string {
     testDate.getMonth() + 1 !== parseInt(month, 10) ||
     testDate.getDate() !== parseInt(day, 10)
   ) {
-    throw new Error(
-      `Invalid date: ${ceYear}-${month}-${day} (month or day does not exist)`
-    );
+    throw new Error(`Invalid date: ${ceYear}-${month}-${day} (month or day does not exist)`);
   }
 
   // Return normalized date
