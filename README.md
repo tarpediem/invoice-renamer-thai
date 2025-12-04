@@ -6,7 +6,7 @@
 
 Automated Thai invoice processing and file renaming using vision AI models. Supports Buddhist Era calendar conversion, OCR from PDFs, and batch processing.
 
-> **🇫🇷 French users**: See [README-DEMARRAGE.md](./README-DEMARRAGE.md) for French quick-start guide
+> **📖 Quick Start Guides**: [English](./QUICKSTART-EN.md) | [Français](./README-DEMARRAGE.md) | [ไทย](./QUICKSTART-TH.md)
 
 ## ✨ Features
 
@@ -198,7 +198,12 @@ npm run format
 
 ## 📚 Documentation
 
-- **[README-DEMARRAGE.md](./README-DEMARRAGE.md)** - French quick-start guide
+### Quick Start Guides
+- **[QUICKSTART-EN.md](./QUICKSTART-EN.md)** - English quick-start guide
+- **[README-DEMARRAGE.md](./README-DEMARRAGE.md)** - Guide de démarrage rapide (Français)
+- **[QUICKSTART-TH.md](./QUICKSTART-TH.md)** - คู่มือเริ่มต้นใช้งานด่วน (ไทย)
+
+### Additional Documentation
 - **[INSTALLATION.md](./INSTALLATION.md)** - Detailed installation guide
 - **[QUICK-START.txt](./QUICK-START.txt)** - Quick reference
 - **[CHANGELOG.md](./CHANGELOG.md)** - Version history
