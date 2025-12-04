@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invoice Renamer - Web UI</title>
+  <style>
+    :root {
+      --bg-primary: #000000;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f8f9fa;
+      --text-primary: #333333;
+      --text-secondary: #666666;
+      --text-tertiary: #999999;
+      --border-color: #e0e0e0;
+      --success-bg: #d4edda;
+      --success-text: #155724;
+      --error-bg: #f8d7da;
+      --error-text: #721c24;
+      --info-bg: #d1ecf1;
+      --info-text: #0c5460;
+      --hover-bg: #f0f0f0;
+      --shadow-color: rgba(0, 0, 0, 0.3);
+    }
+
+    [data-theme="dark"] {
+      --bg-primary: #1a1a1a;
+      --bg-secondary: #2d2d2d;
+      --bg-tertiary: #3a3a3a;
+      --text-primary: #e0e0e0;
+      --text-secondary: #b0b0b0;
+      --text-tertiary: #808080;
+      --border-color: #4a4a4a;
+      --success-bg: #1e4620;
+      --success-text: #7bc67e;
+      --error-bg: #4a1c1c;
+      --error-text: #ff6b6b;
+      --info-bg: #1c3a4a;
+      --info-text: #6ec3e0;
+      --hover-bg: #3a3a3a;
+      --shadow-color: rgba(0, 0, 0, 0.6);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: var(--bg-primary);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      transition: background 0.3s ease;
+    }
+
+    .container {
+      background: var(--bg-secondary);
+      border-radius: 20px;
+      box-shadow: 0 20px 60px var(--shadow-color);
+      max-width: 700px;
+      width: 100%;
+      padding: 40px;
+      transition: background 0.3s ease;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      gap: 10px;
+    }
+
+    .logo {
+      width: 50px;
+      height: 50px;
+      object-fit: contain;
+    }
+
+    h1 {
+      color: var(--text-primary);
+      text-align: center;
+      font-size: 28px;
+      flex: 1;
+      transition: color 0.3s ease;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .settings-btn,
+    .theme-toggle {
+      background: var(--hover-bg);
+      border: none;
+      padding: 10px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 20px;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-primary);
+    }
+
+    .settings-btn:hover,
+    .theme-toggle:hover {
+      background: var(--border-color);
+      transform: scale(1.05);
+    }
+
+    .subtitle {
+      text-align: center;
+      color: var(--text-secondary);
+      margin-bottom: 30px;
+      font-size: 14px;
+      transition: color 0.3s ease;
+    }
+
+    .provider-status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      padding: 10px;
+      border-radius: 8px;
+      background: #f0f0f0;
+    }
+
+    .provider-status.available {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .provider-status.unavailable {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+
+    .status-dot.online {
+      background: #28a745;
+    }
+
+    .status-dot.offline {
+      background: #dc3545;
+    }
+
+    .drop-zone {
+      border: 3px dashed #667eea;
+      border-radius: 15px;
+      padding: 60px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: #f8f9ff;
+    }
+
+    .drop-zone:hover {
+      border-color: #764ba2;
+      background: #f0f2ff;
+    }
+
+    .drop-zone.dragover {
+      border-color: #28a745;
+      background: #d4edda;
+      transform: scale(1.02);
+    }
+
+    .drop-zone-icon {
+      font-size: 48px;
+      margin-bottom: 15px;
+    }
+
+    .drop-zone-text {
+      color: #667eea;
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .drop-zone-hint {
+      color: #999;
+      font-size: 14px;
+    }
+
+    #file-input {
+      display: none;
+    }
+
+    .upload-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 20px;
+      width: 100%;
+      transition: transform 0.2s ease;
+    }
+
+    .upload-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .upload-btn:active {
+      transform: translateY(0);
+    }
+
+    .upload-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .processing-status {
+      margin-top: 30px;
+      display: none;
+    }
+
+    .processing-status.active {
+      display: block;
+    }
+
+    .status-message {
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      font-weight: 500;
+    }
+
+    .status-message.info {
+      background: #d1ecf1;
+      color: #0c5460;
+    }
+
+    .status-message.success {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .status-message.error {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #e0e0e0;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 15px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .stat-card {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 24px;
+      font-weight: 700;
+      color: #667eea;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #666;
+      margin-top: 5px;
+    }
+
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .cancel-btn {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 15px;
+      width: 100%;
+      transition: all 0.2s ease;
+      display: none;
+    }
+
+    .cancel-btn.active {
+      display: block;
+    }
+
+    .cancel-btn:hover {
+      background: #c82333;
+      transform: translateY(-2px);
+    }
+
+    .cancel-btn:active {
+      transform: translateY(0);
+    }
+
+    .cancel-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      background: #6c757d;
+    }
+
+    .files-list {
+      margin-top: 20px;
+      display: none;
+    }
+
+    .files-list.active {
+      display: block;
+    }
+
+    .files-list-header {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+
+    .files-container {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 15px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .file-item {
+      padding: 10px;
+      background: white;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid #e0e0e0;
+      transition: all 0.2s ease;
+    }
+
+    .file-item.success {
+      border-left: 3px solid #28a745;
+    }
+
+    .file-item.failed {
+      background: #fff5f5;
+      border: 1px solid #dc3545;
+      border-left: 3px solid #dc3545;
+      cursor: help;
+    }
+
+    .file-item.failed:hover {
+      background: #ffe0e0;
+    }
+
+    .file-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .file-icon {
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .file-name {
+      flex: 1;
+      font-family: 'Courier New', monospace;
+      word-break: break-all;
+    }
+
+    .file-error {
+      font-size: 11px;
+      color: #721c24;
+      margin-top: 5px;
+      padding-top: 5px;
+      border-top: 1px solid #f5c6cb;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+
+    .retry-btn {
+      background: #ffc107;
+      color: #333;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 15px;
+      width: 100%;
+      transition: all 0.2s ease;
+      display: none;
+    }
+
+    .retry-btn.active {
+      display: block;
+    }
+
+    .retry-btn:hover {
+      background: #e0a800;
+      transform: translateY(-2px);
+    }
+
+    .retry-btn:active {
+      transform: translateY(0);
+    }
+
+    .retry-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      background: #6c757d;
+    }
+
+    .files-container::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .files-container::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+
+    .files-container::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 4px;
+    }
+
+    .files-container::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+
+    /* Search and Filter Styles */
+    .search-filter-container {
+      margin-top: 15px;
+      display: none;
+    }
+
+    .search-filter-container.active {
+      display: block;
+    }
+
+    .search-box {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 14px;
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      transition: all 0.2s ease;
+      margin-bottom: 12px;
+    }
+
+    .search-box:focus {
+      outline: none;
+      border-color: #667eea;
+      background: var(--bg-secondary);
+    }
+
+    .search-box::placeholder {
+      color: var(--text-tertiary);
+    }
+
+    .filter-buttons {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      padding: 8px 16px;
+      border: 2px solid var(--border-color);
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .filter-btn:hover {
+      border-color: #667eea;
+      transform: translateY(-1px);
+    }
+
+    .filter-btn.active {
+      background: #667eea;
+      color: white;
+      border-color: #667eea;
+    }
+
+    /* Toast Notification Styles */
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 350px;
+    }
+
+    .toast {
+      background: var(--bg-secondary);
+      border-left: 4px solid #667eea;
+      border-radius: 8px;
+      padding: 16px 20px;
+      box-shadow: 0 4px 12px var(--shadow-color);
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      animation: slideIn 0.3s ease;
+      min-width: 300px;
+    }
+
+    .toast.success {
+      border-left-color: #28a745;
+    }
+
+    .toast.error {
+      border-left-color: #dc3545;
+    }
+
+    .toast.info {
+      border-left-color: #17a2b8;
+    }
+
+    .toast-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .toast-content {
+      flex: 1;
+    }
+
+    .toast-title {
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+
+    .toast-message {
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    .toast-close {
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      color: var(--text-tertiary);
+      padding: 0;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .toast-close:hover {
+      color: var(--text-primary);
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideOut {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+
+      to {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+    }
+
+    .toast.hiding {
+      animation: slideOut 0.3s ease;
+    }
+
+    /* Copy Button Styles */
+    .copy-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 4px 8px;
+      color: var(--text-tertiary);
+      transition: all 0.2s ease;
+      border-radius: 4px;
+    }
+
+    .copy-btn:hover {
+      background: var(--hover-bg);
+      color: var(--text-primary);
+    }
+
+    /* Keyboard Shortcut Hint */
+    .keyboard-hint {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      text-align: center;
+      margin-top: 15px;
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 600px) {
+      .container {
+        max-width: 100%;
+        padding: 20px;
+      }
+
+      .header {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .header-actions {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .stats {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      .toast-container {
+        left: 20px;
+        right: 20px;
+        max-width: none;
+      }
+
+      .toast {
+        min-width: auto;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <img src="/logo.png" alt="Logo" class="logo" onerror="this.src='/logo.jpg'">
+      <h1>Invoice Renamer</h1>
+      <div class="header-actions">
+        <button id="theme-toggle" class="theme-toggle" title="Toggle Dark Mode" aria-label="Toggle theme">🌙</button>
+        <a href="/settings.html" class="settings-btn" title="Settings" aria-label="Settings">⚙️</a>
+      </div>
+    </div>
+    <p class="subtitle">Drop your PDF or ZIP files • Multi-page PDFs auto-split into separate invoices</p>
+
+    <div id="provider-status" class="provider-status">
+      <span class="status-dot"></span>
+      <span>Checking LM Studio...</span>
+    </div>
+
+    <div id="drop-zone" class="drop-zone">
+      <div class="drop-zone-icon">📄</div>
+      <div class="drop-zone-text">Drop PDF or ZIP file here</div>
+      <div class="drop-zone-hint">or click to browse</div>
+    </div>
+
+    <input type="file" id="file-input" accept=".pdf,.zip" />
+
+    <div id="processing-status" class="processing-status">
+      <div id="status-message" class="status-message info">
+        <div id="status-text">Processing...</div>
+      </div>
+
+      <div class="progress-bar">
+        <div id="progress-fill" class="progress-fill"></div>
+      </div>
+
+      <div id="spinner" class="spinner" style="display: none;"></div>
+
+      <div id="stats" class="stats" style="display: none;">
+        <div class="stat-card">
+          <div id="stat-total" class="stat-number">0</div>
+          <div class="stat-label">Total</div>
+        </div>
+        <div class="stat-card">
+          <div id="stat-success" class="stat-number">0</div>
+          <div class="stat-label">Success</div>
+        </div>
+        <div class="stat-card">
+          <div id="stat-failed" class="stat-number">0</div>
+          <div class="stat-label">Failed</div>
+        </div>
+      </div>
+
+      <div id="files-list" class="files-list">
+        <div class="files-list-header">Processed Files:</div>
+
+        <!-- Search and Filter Controls -->
+        <div id="search-filter" class="search-filter-container">
+          <input type="text" id="search-box" class="search-box"
+            placeholder="🔍 Search by filename, supplier, or date..." aria-label="Search files" />
+          <div class="filter-buttons">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="success">✅ Success</button>
+            <button class="filter-btn" data-filter="failed">❌ Failed</button>
+          </div>
+        </div>
+
+        <div id="files-container" class="files-container"></div>
+      </div>
+
+      <button id="cancel-btn" class="cancel-btn">Stop Processing</button>
+      <button id="retry-btn" class="retry-btn">Retry Failed Files</button>
+    </div>
+
+    <p class="keyboard-hint">💡 Tip: Press Space to upload • Esc to cancel</p>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <script>
+    // ====== CONSTANTS & DOM REFERENCES ======
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const processingStatus = document.getElementById('processing-status');
+    const statusMessage = document.getElementById('status-message');
+    const statusText = document.getElementById('status-text');
+    const progressFill = document.getElementById('progress-fill');
+    const spinner = document.getElementById('spinner');
+    const stats = document.getElementById('stats');
+    const providerStatus = document.getElementById('provider-status');
+    const filesList = document.getElementById('files-list');
+    const filesContainer = document.getElementById('files-container');
+    const cancelBtn = document.getElementById('cancel-btn');
+    const retryBtn = document.getElementById('retry-btn');
+    const themeToggle = document.getElementById('theme-toggle');
+    const searchBox = document.getElementById('search-box');
+    const searchFilterContainer = document.getElementById('search-filter');
+    const toastContainer = document.getElementById('toast-container');
+
+    let currentSessionId = null;
+    let pollInterval = null;
+    let currentFailedFiles = [];
+    let allFiles = { success: [], failed: [] };
+    let currentFilter = 'all';
+
+    // ====== THEME TOGGLE ======
+    function initTheme() {
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      updateThemeIcon(savedTheme);
+    }
+
+    function updateThemeIcon(theme) {
+      themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+      themeToggle.title = theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+    }
+
+    themeToggle.addEventListener('click', () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      updateThemeIcon(newTheme);
+      showToast('Theme changed', `Switched to ${newTheme} mode`, 'success');
+    });
+
+    initTheme();
+
+    // ====== TOAST NOTIFICATIONS ======
+    function showToast(title, message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+
+      const icons = {
+        success: '✅',
+        error: '❌',
+        info: 'ℹ️',
+        warning: '⚠️'
+      };
+
+      toast.innerHTML = `
+        <span class="toast-icon">${icons[type] || icons.info}</span>
+        <div class="toast-content">
+          <div class="toast-title">${title}</div>
+          <div class="toast-message">${message}</div>
+        </div>
+        <button class="toast-close" aria-label="Close">×</button>
+      `;
+
+      toastContainer.appendChild(toast);
+
+      // Close button
+      toast.querySelector('.toast-close').addEventListener('click', () => {
+        removeToast(toast);
+      });
+
+      // Auto-remove after 5 seconds
+      setTimeout(() => removeToast(toast), 5000);
+    }
+
+    function removeToast(toast) {
+      toast.classList.add('hiding');
+      setTimeout(() => {
+        if (toast.parentElement) {
+          toast.parentElement.removeChild(toast);
+        }
+      }, 300);
+    }
+
+    // ====== SEARCH & FILTER ======
+    function filterFiles() {
+      const searchTerm = searchBox.value.toLowerCase();
+      const fileItems = filesContainer.querySelectorAll('.file-item');
+
+      fileItems.forEach(item => {
+        const fileName = item.querySelector('.file-name').textContent.toLowerCase();
+        const isSuccess = item.classList.contains('success');
+        const isFailed = item.classList.contains('failed');
+
+        // Check filter
+        let matchesFilter = false;
+        if (currentFilter === 'all') matchesFilter = true;
+        else if (currentFilter === 'success' && isSuccess) matchesFilter = true;
+        else if (currentFilter === 'failed' && isFailed) matchesFilter = true;
+
+        // Check search
+        const matchesSearch = searchTerm === '' || fileName.includes(searchTerm);
+
+        // Show/hide
+        item.style.display = (matchesFilter && matchesSearch) ? 'flex' : 'none';
+      });
+    }
+
+    // Search box event
+    if (searchBox) {
+      searchBox.addEventListener('input', filterFiles);
+    }
+
+    // Filter buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Update active state
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Update filter
+        currentFilter = btn.getAttribute('data-filter');
+        filterFiles();
+      });
+    });
+
+    // ====== KEYBOARD SHORTCUTS ======
+    document.addEventListener('keydown', (e) => {
+      // Space to upload (when not focused on input)
+      if (e.key === ' ' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') {
+        e.preventDefault();
+        fileInput.click();
+        showToast('Upload', 'File picker opened', 'info');
+      }
+
+      // Escape to cancel
+      if (e.key === 'Escape' && currentSessionId && cancelBtn.classList.contains('active')) {
+        cancelBtn.click();
+      }
+    });
+
+    // Check provider status
+    async function checkProviderStatus() {
+      try {
+        const response = await fetch('/api/health');
+        const data = await response.json();
+
+        if (data.status === 'ok') {
+          providerStatus.classList.remove('unavailable');
+          providerStatus.classList.add('available');
+          const providerName = data.provider === 'openrouter'
+            ? `OpenRouter (${data.model})`
+            : `LM Studio (${data.model})`;
+          providerStatus.innerHTML = `<span class="status-dot online"></span><span>${providerName} is ready</span>`;
+        } else {
+          throw new Error('Provider not available');
+        }
+      } catch (error) {
+        providerStatus.classList.remove('available');
+        providerStatus.classList.add('unavailable');
+        providerStatus.innerHTML = '<span class="status-dot offline"></span><span>No provider available - check OpenRouter API key or start LM Studio</span>';
+      }
+    }
+
+    // Check status on page load
+    checkProviderStatus();
+
+    // Auto-refresh provider status every 30 seconds
+    setInterval(checkProviderStatus, 30000);
+
+    // Refresh provider status when page becomes visible (returning from settings)
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        checkProviderStatus();
+      }
+    });
+
+    // Cancel button handler
+    cancelBtn.addEventListener('click', async () => {
+      if (!currentSessionId) return;
+
+      if (confirm('Are you sure you want to stop processing? Partially processed files will be saved.')) {
+        try {
+          cancelBtn.disabled = true;
+          cancelBtn.textContent = 'Stopping...';
+
+          const response = await fetch(`/api/cancel/${currentSessionId}`, {
+            method: 'POST'
+          });
+
+          if (response.ok) {
+            statusMessage.className = 'status-message info';
+            statusText.textContent = 'Processing stopped. Saving partial results...';
+          } else {
+            const error = await response.json();
+            showError(error.error || 'Failed to cancel');
+          }
+        } catch (error) {
+          showError('Error cancelling processing');
+        }
+      }
+    });
+
+    // Retry button handler
+    retryBtn.addEventListener('click', async () => {
+      if (!currentSessionId || currentFailedFiles.length === 0) return;
+
+      if (confirm(`Retry ${currentFailedFiles.length} failed file(s)?`)) {
+        try {
+          retryBtn.disabled = true;
+          retryBtn.textContent = 'Starting retry...';
+
+          const response = await fetch(`/api/retry/${currentSessionId}`, {
+            method: 'POST'
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            showError(error.error || 'Failed to start retry');
+            retryBtn.disabled = false;
+            retryBtn.textContent = 'Retry Failed Files';
+            return;
+          }
+
+          const { sessionId, total } = await response.json();
+
+          // Update UI for retry
+          currentSessionId = sessionId;
+          currentFailedFiles = [];
+          retryBtn.classList.remove('active');
+          retryBtn.disabled = false;
+          retryBtn.textContent = 'Retry Failed Files';
+          cancelBtn.classList.add('active');
+          statusMessage.className = 'status-message info';
+          statusText.textContent = `Retrying ${total} file(s)...`;
+          progressFill.style.width = '0%';
+
+          // Start polling for new session
+          pollProgress(sessionId, total);
+        } catch (error) {
+          showError('Error starting retry');
+          retryBtn.disabled = false;
+          retryBtn.textContent = 'Retry Failed Files';
+        }
+      }
+    });
+
+    // Drag and drop handlers
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        handleFile(files[0]);
+      }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        handleFile(e.target.files[0]);
+      }
+    });
+
+    async function handleFile(file) {
+      // Validate file type
+      const validExtensions = ['.pdf', '.zip'];
+      const fileExt = '.' + file.name.split('.').pop().toLowerCase();
+
+      if (!validExtensions.includes(fileExt)) {
+        showError('Invalid file type. Please upload a PDF or ZIP file.');
+        showToast('Invalid File', 'Only PDF and ZIP files are supported', 'error');
+        return;
+      }
+
+      showToast('Upload Started', `Uploading ${file.name}...`, 'info');
+
+      // Show processing UI
+      processingStatus.classList.add('active');
+      statusMessage.className = 'status-message info';
+      statusText.textContent = `Uploading ${file.name}...`;
+      progressFill.style.width = '0%';
+      spinner.style.display = 'none';
+      stats.style.display = 'none';
+      filesList.classList.remove('active');
+      searchFilterContainer.classList.remove('active');
+      filesContainer.innerHTML = '';
+      cancelBtn.classList.remove('active');
+      cancelBtn.disabled = false;
+      cancelBtn.textContent = 'Stop Processing';
+      retryBtn.classList.remove('active');
+      retryBtn.disabled = false;
+      retryBtn.textContent = 'Retry Failed Files';
+      currentFailedFiles = [];
+      allFiles = { success: [], failed: [] };
+
+      // Create form data
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        // Upload file
+        const uploadResponse = await fetch('/api/process', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
+          const errorData = await uploadResponse.json();
+          showError(errorData.error || 'Upload failed');
+          return;
+        }
+
+        const { sessionId, total } = await uploadResponse.json();
+
+        // Store session ID for cancel button
+        currentSessionId = sessionId;
+
+        // Start polling for progress
+        statusText.textContent = `Processing ${total} file(s)...`;
+        stats.style.display = 'grid';
+        filesList.classList.add('active');
+        searchFilterContainer.classList.add('active');
+        cancelBtn.classList.add('active');
+
+        showToast('Processing Started', `Processing ${total} files`, 'info');
+
+        pollProgress(sessionId, total);
+      } catch (error) {
+        showError(error.message || 'An error occurred during processing');
+      }
+    }
+
+    async function pollProgress(sessionId, total) {
+      pollInterval = setInterval(async () => {
+        try {
+          const response = await fetch(`/api/progress/${sessionId}`);
+          if (!response.ok) {
+            clearInterval(pollInterval);
+            showError('Failed to get progress');
+            return;
+          }
+
+          const progress = await response.json();
+
+          // Debug logging
+          console.log('Progress update:', {
+            status: progress.status,
+            processed: progress.processed,
+            successful: progress.successful,
+            failed: progress.failed,
+            filesCount: progress.files?.length,
+            failedFilesCount: progress.failedFiles?.length,
+            failedFiles: progress.failedFiles
+          });
+
+          // Update stats
+          document.getElementById('stat-total').textContent = progress.total || 0;
+          document.getElementById('stat-success').textContent = progress.successful || 0;
+          document.getElementById('stat-failed').textContent = progress.failed || 0;
+
+          // Update progress bar
+          const percentComplete = total > 0 ? (progress.processed / total) * 100 : 0;
+          progressFill.style.width = percentComplete + '%';
+
+          // Update status text
+          statusText.textContent = `Processing... (${progress.processed}/${total})`;
+
+          // Store failed files
+          currentFailedFiles = progress.failedFiles || [];
+
+          // Update files list in real-time with both successful and failed files
+          updateFilesList(progress.files || [], progress.failedFiles || []);
+
+          // Show retry button if there are failed files
+          if (currentFailedFiles.length > 0 && progress.status !== 'processing') {
+            console.log('Showing retry button for', currentFailedFiles.length, 'failed files');
+            retryBtn.classList.add('active');
+          }
+
+          // Check if completed
+          if (progress.status === 'completed') {
+            clearInterval(pollInterval);
+            cancelBtn.classList.remove('active');
+            progressFill.style.width = '100%';
+            statusMessage.className = 'status-message success';
+            statusText.textContent = 'Processing complete! Downloading ZIP file...';
+
+            showToast('Complete!', `${progress.successful} files processed successfully`, 'success');
+
+            // Download ZIP
+            const downloadUrl = `/api/download/${sessionId}`;
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = 'processed-invoices.zip';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            // Update status based on results
+            if (progress.failed > 0) {
+              statusText.textContent = `Complete! ${progress.successful} succeeded, ${progress.failed} failed.`;
+              showToast('Partial Success', `${progress.failed} files failed`, 'warning');
+            } else {
+              statusText.textContent = 'Success! All files processed.';
+            }
+            // Don't reset currentSessionId yet - needed for retry
+          } else if (progress.status === 'cancelled') {
+            clearInterval(pollInterval);
+            cancelBtn.classList.remove('active');
+            statusMessage.className = 'status-message info';
+            statusText.textContent = `Processing stopped. ${progress.successful} succeeded, ${progress.failed} failed.`;
+
+            showToast('Cancelled', 'Processing was stopped', 'info');
+
+            // Offer to download partial results if any files were processed
+            if (progress.successful > 0) {
+              setTimeout(() => {
+                if (confirm(`Download partial results? (${progress.successful} files processed successfully)`)) {
+                  const downloadUrl = `/api/download/${sessionId}`;
+                  const a = document.createElement('a');
+                  a.href = downloadUrl;
+                  a.download = 'processed-invoices-partial.zip';
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                }
+              }, 500);
+            }
+            // Don't reset currentSessionId - needed for retry
+          } else if (progress.status === 'error') {
+            clearInterval(pollInterval);
+            cancelBtn.classList.remove('active');
+            showError(progress.error || 'Processing failed');
+            currentSessionId = null;
+          }
+        } catch (error) {
+          clearInterval(pollInterval);
+          showError('Error checking progress');
+        }
+      }, 1000); // Poll every second
+    }
+
+    function updateFilesList(successFiles, failedFiles) {
+      console.log('updateFilesList called:', {
+        successCount: successFiles.length,
+        failedCount: failedFiles.length,
+        successFiles,
+        failedFiles
+      });
+
+      // Clear existing files
+      filesContainer.innerHTML = '';
+
+      // Add successful files
+      successFiles.forEach((filename) => {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'file-item success';
+
+        const icon = document.createElement('span');
+        icon.className = 'file-icon';
+        icon.textContent = '✅';
+
+        const nameContainer = document.createElement('div');
+        nameContainer.style.flex = '1';
+
+        const name = document.createElement('span');
+        name.className = 'file-name';
+        name.textContent = filename;
+
+        nameContainer.appendChild(name);
+        fileItem.appendChild(icon);
+        fileItem.appendChild(nameContainer);
+        filesContainer.appendChild(fileItem);
+      });
+
+      // Add failed files
+      failedFiles.forEach((failedFile) => {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'file-item failed';
+        fileItem.title = failedFile.error || 'Processing failed';
+
+        const icon = document.createElement('span');
+        icon.className = 'file-icon';
+        icon.textContent = '❌';
+
+        const nameContainer = document.createElement('div');
+        nameContainer.style.flex = '1';
+
+        const name = document.createElement('span');
+        name.className = 'file-name';
+        name.textContent = failedFile.originalName;
+
+        const errorMsg = document.createElement('div');
+        errorMsg.className = 'file-error';
+        errorMsg.textContent = failedFile.error || 'Processing failed';
+
+        nameContainer.appendChild(name);
+        nameContainer.appendChild(errorMsg);
+        fileItem.appendChild(icon);
+        fileItem.appendChild(nameContainer);
+        filesContainer.appendChild(fileItem);
+      });
+    }
+
+    function showError(message) {
+      processingStatus.classList.add('active');
+      statusMessage.className = 'status-message error';
+      statusText.textContent = message;
+      spinner.style.display = 'none';
+      progressFill.style.width = '0%';
+      stats.style.display = 'none';
+      filesList.classList.remove('active');
+    }
+  </script>
+</body>
+
+</html>

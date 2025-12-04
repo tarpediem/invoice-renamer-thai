@@ -1,0 +1,116 @@
+# SÉCURITÉ - FICHIERS SENSIBLES
+# ==============================
+# NE JAMAIS COMMITER CES FICHIERS!
+
+# Variables d'environnement et clés API
+.env
+.env.local
+.env.*.local
+*.env
+
+# Clés et secrets
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+config/secrets/
+
+# Dossiers de données utilisateur
+invoices/
+processed/
+uploads/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Fichiers de build
+dist/
+build/
+*.tsbuildinfo
+
+# Cache
+.cache/
+.npm/
+.eslintcache
+.parcel-cache/
+
+# Tests
+coverage/
+*.lcov
+.nyc_output/
+
+# Fichiers temporaires
+.temp/
+temp/
+tmp/
+*.tmp
+*.log
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+
+# TypeScript
+*.tsbuildinfo
+
+# PDF de test (peuvent contenir des données sensibles)
+test-invoices/
+sample-invoices/
+*.pdf
+!public/*.pdf
+
+# Images de test
+*.png
+*.jpg
+*.jpeg
+!public/*.png
+!public/*.jpg
+!public/logo.*
+
+# Archives
+*.zip
+*.tar.gz
+*.rar
+!examples/*.zip
+
+# Logs détaillés (peuvent contenir des infos sensibles)
+full-processing-log.txt
+processing-log.txt
+*.log
+
+# Documentation de développement local
+NOTES.md
+TODO.md
+PRIVATE*.md
+
+# Fichiers de sauvegarde
+*.bak
+*.backup
+*~
+
+# Package manager lock files (optionnel - décommenter si souhaité)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml

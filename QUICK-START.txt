@@ -1,0 +1,45 @@
+╔══════════════════════════════════════════════════════════════╗
+║            INVOICE RENAMER - DÉMARRAGE RAPIDE               ║
+╚══════════════════════════════════════════════════════════════╝
+
+📦 INSTALLATION
+───────────────
+1. Copiez .env.example vers .env
+   cp .env.example .env
+
+2. Éditez .env et ajoutez votre clé API OpenRouter
+   OPENROUTER_API_KEY=votre-clé-ici
+
+3. Lancez le script de démarrage
+   ./start.sh
+
+🌐 ACCÈS
+────────
+Interface web:  http://localhost:3000
+Paramètres:     http://localhost:3000/settings.html
+
+🔑 OBTENIR UNE CLÉ API
+──────────────────────
+1. Visitez: https://openrouter.ai/
+2. Créez un compte
+3. Allez dans "Keys" 
+4. Créez une nouvelle clé
+5. Copiez-la dans .env
+
+💡 UTILISATION
+──────────────
+1. Ouvrez http://localhost:3000
+2. Glissez-déposez vos PDFs ou ZIPs
+3. Attendez le traitement
+4. Téléchargez le ZIP avec fichiers renommés
+
+Format de sortie: YYYY-MM-DD-Fournisseur.pdf
+Exemple: 2025-11-15-7-Eleven.pdf
+
+🛑 ARRÊTER
+──────────
+Appuyez sur Ctrl+C dans le terminal
+
+📖 AIDE
+───────
+Voir README-DEMARRAGE.md pour plus de détails
